@@ -4,9 +4,11 @@
 dist
 tmp
 /out-tsc
+/envs
 
 # dependencies
 node_modules
+/mongo-data-4.4
 
 # IDEs and editors
 /.idea
