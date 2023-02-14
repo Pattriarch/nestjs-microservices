@@ -1,5 +1,6 @@
-import {IUser, IUserCourses, UserRole} from "@purple/interfaces";
-import {compare, genSalt, hash} from "bcryptjs";
+import { IDomainEvent, IUser, IUserCourses, PurchasesState, UserRole } from "@purple/interfaces";
+import { compare, genSalt, hash } from "bcryptjs";
+import { AccountChangedCourse } from "@purple/contracts";
 
 export class UserEntity implements IUser {
 	_id?: string;
@@ -8,6 +9,7 @@ export class UserEntity implements IUser {
 	passwordHash: string;
 	role: UserRole;
 	courses?: IUserCourses[];
+	events: IDomainEvent[] = [];
 
 	constructor(user: IUser) {
 		this._id = user._id;
@@ -16,6 +18,39 @@ export class UserEntity implements IUser {
 		this.email = user.email;
 		this.role = user.role;
 		this.courses = user.courses;
+	}
+
+	public setCourseStatus(courseId: string, state: PurchasesState) {
+		const exist = this.courses.find(c => c.courseId === courseId);
+		if (!exist) {
+			this.courses.push({
+				courseId,
+				purchaseState: state
+			});
+			return this;
+		}
+
+		if (state === PurchasesState.Canceled) {
+			this.courses = this.courses.filter(c => c.courseId !== courseId);
+			return this;
+		}
+
+		this.courses = this.courses.map(c => {
+			if (c.courseId === courseId) {
+				c.purchaseState = state;
+				return c;
+			}
+			return c;
+		});
+		this.events.push({
+			topic: AccountChangedCourse.topic,
+			data: { courseId, userId: this._id, state }
+		})
+		return this;
+	}
+
+	public getCourseState(courseId: string): PurchasesState {
+		return this.courses.find(c => c.courseId === courseId)?.purchaseState ?? PurchasesState.Started;
 	}
 
 	public async getPublicProfile() {
