@@ -1,7 +1,7 @@
-import {Body, Controller} from '@nestjs/common';
+import { Body, Controller, Logger } from '@nestjs/common';
 import {AuthService} from "./auth.service";
 import {AccountLogin, AccountRegister} from "@purple/contracts";
-import {RMQRoute, RMQValidate} from "nestjs-rmq";
+import { Message, RMQMessage, RMQRoute, RMQValidate } from "nestjs-rmq";
 
 @Controller()
 export class AuthController {
@@ -12,7 +12,12 @@ export class AuthController {
 
 	@RMQValidate()
 	@RMQRoute(AccountRegister.topic)
-	async register(@Body() dto: AccountRegister.Request): Promise<AccountRegister.Response> {
+	async register(dto: AccountRegister.Request, @RMQMessage msg: Message): Promise<AccountRegister.Response> {
+		const requestId = msg.properties.headers['requestId'];
+		// 1 параметр логгера - контекст
+		const logger = new Logger(requestId);
+		// и теперь при вызове метода логгер будет иметь контекст
+		logger.error('какая-то ошибка');
 		return this.authService.register(dto);
 	}
 

@@ -31,4 +31,9 @@ export class UserRepository {
 	async updateUser({_id, ...rest}: UserEntity) {
 		await this.userModel.updateOne({_id}, {$set: {...rest}}).exec();
 	}
+
+	async healthCheck() {
+		// найдем первый попвшийся
+		return this.userModel.findOne({}).exec();
+	}
 }
